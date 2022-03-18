@@ -41,6 +41,10 @@ internal object NetworkCompat {
         }
     }
 
+    private val isDebug by lazy {
+        application.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
+    }
+
     private val spacing = Regex("\\s+")
 
     fun isLocalHost(host: String): Boolean {
@@ -94,32 +98,42 @@ internal object NetworkCompat {
                 OsConstants.IPPROTO_RAW -> "raw"
                 else -> throw IllegalArgumentException()
             }
-            val lines = arrayOf("/proc/net/${name}", "/proc/net/${name}6")
-                .asSequence()
-                .map { File(it) }
-                .flatMap { it.readLines().run { subList(1, size) } }
-            val connections = lines.asSequence()
-                .map { it.trim().split(spacing) }
-                .map {
-                    TcpConnection(
-                        it[7].toInt(),
-                        toInetSocketAddress(it[1]),
-                        toInetSocketAddress(it[2])
-                    )
+            File("/proc/net/${name}").useLines { protocol4 ->
+                File("/proc/net/${name}6").useLines { protocol6 ->
+                    val connection = arrayOf(protocol4, protocol6)
+                        .asSequence()
+                        .onEach { it.drop(1) }
+                        .flatMap { it }
+                        .map { it.trim().split(spacing) }
+                        .map {
+                            TcpConnection(
+                                it[7].toInt(),
+                                toInetSocketAddress(it[1]),
+                                toInetSocketAddress(it[2])
+                            )
+                        }
+                        .findConnection {
+                            addressDeepEquals(
+                                it.localAddress,
+                                local
+                            ) && addressDeepEquals(
+                                it.remoteAddress,
+                                remote
+                            )
+                        }
+                    return connection?.uid ?: Process.INVALID_UID
                 }
-            val connection = connections.find {
-                addressDeepEquals(
-                    it.localAddress,
-                    local
-                ) && addressDeepEquals(
-                    it.remoteAddress,
-                    remote
-                )
             }
-            if (application.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0) {
-                Log.d(TAG, "connections: \n${connections.joinToString("\n")}")
-            }
-            return connection?.uid ?: Process.INVALID_UID
+        }
+    }
+
+    private inline fun Sequence<TcpConnection>.findConnection(predicate: (TcpConnection) -> Boolean): TcpConnection? {
+        return if (isDebug) {
+            val connections = this.toList()
+            Log.d(TAG, "connections: \n${connections.joinToString("\n")}")
+            connections.find(predicate)
+        } else {
+            this.find(predicate)
         }
     }
 
