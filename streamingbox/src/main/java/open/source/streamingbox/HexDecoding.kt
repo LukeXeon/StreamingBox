@@ -34,14 +34,14 @@ internal object HexDecoding {
         var encodedCharOffset = 0
         if (encoded.length % 2 != 0) {
             // Odd number of digits -- the first digit is the lower 4 bits of the first result byte.
-            result[resultOffset++] = getHexadecimalDigitValue(encoded[encodedCharOffset])
-                .toByte()
+            result[resultOffset++] = getHexadecimalDigitValue(encoded[encodedCharOffset]).toByte()
             encodedCharOffset++
         }
         val len = encoded.length
         while (encodedCharOffset < len) {
-            result[resultOffset++] = (getHexadecimalDigitValue(encoded[encodedCharOffset]) shl 4
-                    or getHexadecimalDigitValue(encoded[encodedCharOffset + 1])).toByte()
+            result[resultOffset++] =
+                (getHexadecimalDigitValue(encoded[encodedCharOffset]) shl 4 or getHexadecimalDigitValue(
+                    encoded[encodedCharOffset + 1])).toByte()
             encodedCharOffset += 2
         }
         return result

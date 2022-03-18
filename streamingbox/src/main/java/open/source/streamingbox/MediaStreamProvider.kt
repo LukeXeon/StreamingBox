@@ -31,7 +31,7 @@ internal class MediaStreamProvider : ContentProvider(), IMediaDataSource.Provide
     }
 
     private val extractor by lazy {
-        MediaStreamExtractor(this).apply { start() }
+        MediaStreamExtractor(requireNotNull(context), this).apply { start() }
     }
 
     override fun call(method: String, arg: String?, extras: Bundle?): Bundle? {
@@ -49,7 +49,7 @@ internal class MediaStreamProvider : ContentProvider(), IMediaDataSource.Provide
         return null
     }
 
-    override fun openMediaDataSource(url: String): IMediaDataSource {
+    override fun open(url: String): IMediaDataSource {
         return StreamingBox.openMediaDataSource(requireNotNull(context), File(url))
     }
 

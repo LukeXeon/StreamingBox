@@ -11,11 +11,23 @@ import java.nio.MappedByteBuffer
 import java.nio.channels.*
 
 internal object NioCompat {
-    private val patchLock = BooleanArray(1)
 
     private const val TAG = "NioCompat"
 
     private const val PATCH_CLASS_NAME = "java.nio.channels.SeekableByteChannel"
+
+    private val patchLock = BooleanArray(1)
+
+    // lazy：防止jvm拒绝加载FileChannelCompat
+    private val wrap0 by lazy<(FileChannel) -> FileChannel> {
+        {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                it
+            } else {
+                FileChannelCompat(it)
+            }
+        }
+    }
 
     fun install(context: Context) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
@@ -46,20 +58,13 @@ internal object NioCompat {
         }
     }
 
-    // lazy：防止jvm拒绝加载FileChannelCompat
-    val wrap by lazy<(FileChannel) -> FileChannel> {
-        {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                it
-            } else {
-                FileChannelCompat(it)
-            }
-        }
+    fun wrap(channel: FileChannel): FileChannel {
+        return wrap0(channel)
     }
 
     @SuppressLint("NewApi")
     private class FileChannelCompat(
-        private val delegate: FileChannel
+        private val delegate: FileChannel,
     ) : FileChannel(), SeekableByteChannel {
         override fun implCloseChannel() {
             delegate.close()

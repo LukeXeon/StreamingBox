@@ -1,5 +1,6 @@
 package open.source.streamingbox
 
+import android.content.Context
 import android.os.Process
 import android.system.OsConstants
 import android.util.Log
@@ -14,6 +15,7 @@ import java.util.concurrent.*
 import kotlin.math.min
 
 internal class MediaStreamExtractor(
+    private val context: Context,
     private val provider: IMediaDataSource.Provider
 ) : Runnable, ThreadFactory, RejectedExecutionHandler {
     private val executor = ThreadPoolExecutor(
@@ -85,11 +87,12 @@ internal class MediaStreamExtractor(
             Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND)
             try {
                 Log.i(TAG, "Processing request: " + client.inetAddress.hostName)
-                if (!NetworkCompat.isLocalHost(client.inetAddress.hostName)) {
+                if (!NetworkCompat.isLocalHost(context, client.inetAddress.hostName)) {
                     Log.i(TAG, "Reject, ${client.inetAddress}")
                     return
                 }
                 val uid = NetworkCompat.getConnectionOwnerUid(
+                    context,
                     OsConstants.IPPROTO_TCP,
                     client.remoteSocketAddress as InetSocketAddress,
                     client.localSocketAddress as InetSocketAddress
@@ -116,7 +119,7 @@ internal class MediaStreamExtractor(
                 if (filePath.isNullOrEmpty()) {
                     return
                 }
-                provider.openMediaDataSource(filePath).use { dataSource ->
+                provider.open(filePath).use { dataSource ->
                     val size = dataSource.getSize()
                     val responseHeaders = StringBuilder(128)
                     if (skip > 0) {

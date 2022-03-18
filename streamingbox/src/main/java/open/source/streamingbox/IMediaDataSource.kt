@@ -20,6 +20,6 @@ interface IMediaDataSource : Closeable {
     fun getSize(): Long
 
     interface Provider {
-        fun openMediaDataSource(url: String): IMediaDataSource
+        fun open(url: String): IMediaDataSource
     }
 }

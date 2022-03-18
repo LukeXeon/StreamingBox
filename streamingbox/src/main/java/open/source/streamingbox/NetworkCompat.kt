@@ -1,7 +1,6 @@
 package open.source.streamingbox
 
 import android.annotation.SuppressLint
-import android.app.Application
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.net.ConnectivityManager
@@ -11,6 +10,7 @@ import android.os.Build
 import android.os.Process
 import android.system.OsConstants
 import android.util.Log
+import android.util.LruCache
 import java.io.File
 import java.net.InetAddress
 import java.net.InetSocketAddress
@@ -18,16 +18,8 @@ import java.net.Proxy.NO_PROXY
 
 @SuppressLint("DiscouragedPrivateApi", "PrivateApi")
 internal object NetworkCompat {
-    private val application by lazy {
-        Class.forName("android.app.ActivityThread")
-            .getDeclaredMethod("currentApplication")
-            .apply {
-                isAccessible = true
-            }
-            .invoke(null) as Application
-    }
 
-    private val isNoProxy by lazy<(String) -> Boolean> {
+    private val isNoProxy by lazy<(Context, String) -> Boolean> {
         val method = Proxy::class.java
             .getDeclaredMethod(
                 "getProxy",
@@ -36,41 +28,43 @@ internal object NetworkCompat {
             ).apply {
                 isAccessible = true
             }
-        return@lazy {
-            method.invoke(null, application, it) == NO_PROXY
+        return@lazy { context, host ->
+            method.invoke(null, context, host) == NO_PROXY
         }
     }
 
-    private val isDebug by lazy {
-        application.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
+    private val addressStore = object : LruCache<String, InetSocketAddress>(16) {
+        override fun create(key: String): InetSocketAddress {
+            val parts = key.split(":")
+            var bytes = HexDecoding.decode(parts[0])
+            val port = parts[1].toInt(16)
+            bytes = HexDecoding.toNetworkOrder(bytes)
+            val address = InetAddress.getByAddress(bytes)
+            return InetSocketAddress(address, port)
+        }
     }
 
     private val spacing = Regex("\\s+")
 
-    fun isLocalHost(host: String): Boolean {
+    fun isLocalHost(context: Context, host: String): Boolean {
         return if (host.equals("localhost", ignoreCase = true)) {
             true
         } else {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 InetAddresses.parseNumericAddress(host).isLoopbackAddress
             } else {
-                isNoProxy(host)
+                isNoProxy(context, host)
             }
         }
     }
 
     private fun toInetSocketAddress(src: String): InetSocketAddress {
-        val parts = src.split(":")
-        var bytes = HexDecoding.decode(parts[0])
-        val port = parts[1].toInt(16)
-        bytes = HexDecoding.toNetworkOrder(bytes)
-        val address = InetAddress.getByAddress(bytes)
-        return InetSocketAddress(address, port)
+        return addressStore[src]
     }
 
     private fun addressDeepEquals(
         left: InetSocketAddress,
-        right: InetSocketAddress
+        right: InetSocketAddress,
     ): Boolean {
         if (left.address.isLoopbackAddress && right.address.isLoopbackAddress) {
             if (left.port == right.port) {
@@ -82,14 +76,14 @@ internal object NetworkCompat {
 
     @SuppressLint("InlinedApi")
     fun getConnectionOwnerUid(
+        context: Context,
         protocol: Int,
         local: InetSocketAddress,
-        remote: InetSocketAddress
+        remote: InetSocketAddress,
     ): Int {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            val m = application.getSystemService(Context.CONNECTIVITY_SERVICE)
-                    as ConnectivityManager
-            m.getConnectionOwnerUid(OsConstants.IPPROTO_TCP, local, remote)
+            val m = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+            m.getConnectionOwnerUid(protocol, local, remote)
         } else {
             Log.d(TAG, "getConnectionOwnerUid: protocol: $protocol local: $local remote: $remote")
             val name = when (protocol) {
@@ -111,7 +105,7 @@ internal object NetworkCompat {
                                 toInetSocketAddress(it[2])
                             )
                         }
-                        .findConnection {
+                        .find0(context) {
                             addressDeepEquals(
                                 it.localAddress,
                                 local
@@ -126,7 +120,11 @@ internal object NetworkCompat {
         }
     }
 
-    private inline fun Sequence<TcpConnection>.findConnection(predicate: (TcpConnection) -> Boolean): TcpConnection? {
+    private inline fun <T> Sequence<T>.find0(
+        context: Context,
+        predicate: (T) -> Boolean,
+    ): T? {
+        val isDebug = context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
         return if (isDebug) {
             val connections = this.toList()
             Log.d(TAG, "connections: \n${connections.joinToString("\n")}")
@@ -141,7 +139,7 @@ internal object NetworkCompat {
     private data class TcpConnection(
         val uid: Int,
         val localAddress: InetSocketAddress,
-        val remoteAddress: InetSocketAddress
+        val remoteAddress: InetSocketAddress,
     )
 
 }
