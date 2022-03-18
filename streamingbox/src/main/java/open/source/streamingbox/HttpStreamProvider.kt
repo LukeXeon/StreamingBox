@@ -9,7 +9,7 @@ import android.os.Bundle
 import java.io.File
 import java.io.FileNotFoundException
 
-internal class MediaStreamProvider : ContentProvider(), IMediaDataSource.Provider {
+internal class HttpStreamProvider : ContentProvider(), IMediaDataSource.Provider {
 
     companion object {
         private const val KEY_URI = "uri"
@@ -19,7 +19,7 @@ internal class MediaStreamProvider : ContentProvider(), IMediaDataSource.Provide
 
         fun mapping(context: Context, file: File): Uri {
             val bundle = context.contentResolver.call(
-                Uri.parse("content://${context.packageName}.streaming-box.media-stream-provider"),
+                Uri.parse("content://${context.packageName}.streaming-box.http-stream-provider"),
                 METHOD_MAPPING,
                 null,
                 Bundle().apply {
@@ -31,7 +31,7 @@ internal class MediaStreamProvider : ContentProvider(), IMediaDataSource.Provide
     }
 
     private val extractor by lazy {
-        MediaStreamExtractor(requireNotNull(context), this).apply { start() }
+        HttpStreamExtractor(requireNotNull(context), this).apply { start() }
     }
 
     override fun call(method: String, arg: String?, extras: Bundle?): Bundle? {
@@ -62,7 +62,7 @@ internal class MediaStreamProvider : ContentProvider(), IMediaDataSource.Provide
         projection: Array<out String>?,
         selection: String?,
         selectionArgs: Array<out String>?,
-        sortOrder: String?
+        sortOrder: String?,
     ): Cursor? {
         throw UnsupportedOperationException()
     }
@@ -71,7 +71,7 @@ internal class MediaStreamProvider : ContentProvider(), IMediaDataSource.Provide
 
     override fun insert(
         uri: Uri,
-        values: ContentValues?
+        values: ContentValues?,
     ): Uri? {
         throw UnsupportedOperationException()
     }
@@ -79,7 +79,7 @@ internal class MediaStreamProvider : ContentProvider(), IMediaDataSource.Provide
     override fun delete(
         uri: Uri,
         selection: String?,
-        selectionArgs: Array<out String>?
+        selectionArgs: Array<out String>?,
     ): Int {
         throw UnsupportedOperationException()
     }
@@ -88,7 +88,7 @@ internal class MediaStreamProvider : ContentProvider(), IMediaDataSource.Provide
         uri: Uri,
         values: ContentValues?,
         selection: String?,
-        selectionArgs: Array<out String>?
+        selectionArgs: Array<out String>?,
     ): Int {
         throw UnsupportedOperationException()
     }

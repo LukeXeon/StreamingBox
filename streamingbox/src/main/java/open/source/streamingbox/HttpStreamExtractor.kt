@@ -14,7 +14,7 @@ import java.util.*
 import java.util.concurrent.*
 import kotlin.math.min
 
-internal class MediaStreamExtractor(
+internal class HttpStreamExtractor(
     private val context: Context,
     private val provider: IMediaDataSource.Provider
 ) : Runnable, ThreadFactory, RejectedExecutionHandler {
