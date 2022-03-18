@@ -102,8 +102,7 @@ internal object NetworkCompat {
                 File("/proc/net/${name}6").useLines { protocol6 ->
                     val connection = arrayOf(protocol4, protocol6)
                         .asSequence()
-                        .onEach { it.drop(1) }
-                        .flatMap { it }
+                        .flatMap { it.drop(1) }
                         .map { it.trim().split(spacing) }
                         .map {
                             TcpConnection(
