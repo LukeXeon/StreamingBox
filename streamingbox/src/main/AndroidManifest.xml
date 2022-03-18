@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="open.source.streamingbox">
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <application>
+        <provider
+            android:name=".MediaStreamProvider"
+            android:authorities="${applicationId}.streaming-box.media-stream-provider"
+            android:exported="false"
+            android:multiprocess="false" />
+    </application>
+</manifest>
