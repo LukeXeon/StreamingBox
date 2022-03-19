@@ -17,7 +17,7 @@ object StreamingBox {
 
     private fun newEncryptedFile(
         context: Context,
-        file: File
+        file: File,
     ): EncryptedMediaFile {
         NioCompat.install(context)
         return EncryptedMediaFile.Builder(
@@ -32,7 +32,7 @@ object StreamingBox {
 
     private fun openChannel(
         context: Context,
-        file: File
+        file: File,
     ): SeekableByteChannel {
         return newEncryptedFile(context, file).openSeekableByteChannel()
     }
@@ -50,7 +50,7 @@ object StreamingBox {
     @JvmStatic
     fun openInputStream(
         context: Context,
-        file: File
+        file: File,
     ): InputStream {
         return newEncryptedFile(context, file).openInputStream()
     }
@@ -58,7 +58,7 @@ object StreamingBox {
     @JvmStatic
     fun openMediaDataSource(
         context: Context,
-        file: File
+        file: File,
     ): IMediaDataSource {
         val impl = MediaDataSourceImpl(openChannel(context, file))
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -70,7 +70,7 @@ object StreamingBox {
 
     @JvmStatic
     fun openHTTPStream(context: Context, file: File): Uri {
-        return MediaStreamProvider.mapping(context, file)
+        return HttpStreamProvider.mapping(context, file)
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
