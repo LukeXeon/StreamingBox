@@ -83,7 +83,13 @@ internal object NetworkCompat {
     ): Int {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val m = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-            m.getConnectionOwnerUid(protocol, local, remote)
+            try {
+                m.getConnectionOwnerUid(protocol, local, remote)
+            } catch (e: Throwable) {
+                // 那还能怎么样？让它挂掉吗？
+                e.printStackTrace()
+                0
+            }
         } else {
             Log.d(TAG, "getConnectionOwnerUid: protocol: $protocol local: $local remote: $remote")
             val name = when (protocol) {

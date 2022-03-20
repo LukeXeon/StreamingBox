@@ -95,16 +95,20 @@ internal class HttpStreamExtractor(
         override fun run() {
             Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND)
             try {
+                val remote = client.remoteSocketAddress as InetSocketAddress
+                val local = client.localSocketAddress as InetSocketAddress
                 Log.i(TAG, "Processing request: " + client.inetAddress.hostName)
-                if (!NetworkCompat.isLocalHost(context, client.inetAddress.hostName)) {
+                if (!NetworkCompat.isLocalHost(context, remote.address.hostName)
+                    || !NetworkCompat.isLocalHost(context, local.address.hostName)
+                ) {
                     Log.i(TAG, "Reject, ${client.inetAddress}")
                     return
                 }
                 val uid = NetworkCompat.getConnectionOwnerUid(
                     context,
                     OsConstants.IPPROTO_TCP,
-                    client.remoteSocketAddress as InetSocketAddress,
-                    client.localSocketAddress as InetSocketAddress
+                    remote,
+                    local
                 )
                 if (uid != 0 && uid != Process.myUid()) {
                     Log.i(TAG, "Reject, uid1: ${Process.myUid()}, uid2: $uid")
