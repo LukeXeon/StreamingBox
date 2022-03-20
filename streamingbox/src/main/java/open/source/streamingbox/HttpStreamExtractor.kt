@@ -145,7 +145,6 @@ internal class HttpStreamExtractor(
                         Locale.getDefault()
                     )
                     responseHeaders.append("Server: streaming-box/1.0.0\r\n")
-                    responseHeaders.append("Connection: keep-alive\r\n")
                     responseHeaders.append("Content-Type: video/mp4\r\n")
                     responseHeaders.append("Accept-Ranges: bytes\r\n")
                     responseHeaders.append("Last-Modified: ${format.format(Date(File(filePath).lastModified()))}\r\n")

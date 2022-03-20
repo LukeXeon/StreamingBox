@@ -71,7 +71,7 @@ object StreamingBox {
     }
 
     @JvmStatic
-    fun openHTTPStream(context: Context, file: File): Uri {
+    fun openLocalHttpUri(context: Context, file: File): Uri {
         return HttpStreamProvider.mapping(context, file)
     }
 
