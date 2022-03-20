@@ -15,6 +15,7 @@ import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.*
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.max
 import kotlin.math.min
 
@@ -22,6 +23,7 @@ internal class HttpStreamExtractor(
     private val context: Context,
     private val provider: IMediaDataSource.Provider,
 ) : Runnable, ThreadFactory, RejectedExecutionHandler {
+    private val counter = AtomicInteger()
     private val executor = ThreadPoolExecutor(
         0, min(4, Runtime.getRuntime().availableProcessors()),
         60L, TimeUnit.SECONDS,
@@ -45,6 +47,7 @@ internal class HttpStreamExtractor(
             return
         }
         thread = Thread(this).apply {
+            name = TAG + "_Dispatcher"
             start()
         }
     }
@@ -59,7 +62,9 @@ internal class HttpStreamExtractor(
     }
 
     override fun newThread(r: Runnable): Thread {
-        return Thread(r)
+        return Thread(r).apply {
+            name = TAG + "_IO_Worker_" + counter.getAndIncrement()
+        }
     }
 
     override fun rejectedExecution(r: Runnable, executor: ThreadPoolExecutor) {
@@ -153,7 +158,7 @@ internal class HttpStreamExtractor(
                     output.write(responseHeaders.toString().toByteArray())
                     val buffer = ByteBuffer.allocate(
                         min(
-                            Runtime.getRuntime().freeMemory() * 2,
+                            Runtime.getRuntime().freeMemory() / 2,
                             max(DEFAULT_BUFFER_SIZE.toLong(), size / 10)
                         ).toInt()
                     )
