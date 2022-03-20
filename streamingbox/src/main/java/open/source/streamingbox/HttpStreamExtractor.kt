@@ -7,11 +7,15 @@ import android.util.Log
 import java.io.Closeable
 import java.io.File
 import java.io.IOException
-import java.net.*
+import java.net.InetSocketAddress
+import java.net.ServerSocket
+import java.net.Socket
+import java.net.SocketTimeoutException
 import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.*
+import kotlin.math.max
 import kotlin.math.min
 
 internal class HttpStreamExtractor(
@@ -101,8 +105,7 @@ internal class HttpStreamExtractor(
                     Log.i(TAG, "Reject, uid1: ${Process.myUid()}, uid2: $uid")
                     return
                 }
-                val clientInput = client.getInputStream()
-                val request = HttpRequest.parse(clientInput)
+                val request = HttpRequest.parse(client.getInputStream())
                 var range = request.headers["range"]
                 var skip = 0L
                 if (!range.isNullOrEmpty()) {
@@ -142,14 +145,18 @@ internal class HttpStreamExtractor(
                     responseHeaders.append("Accept-Ranges: bytes\r\n")
                     responseHeaders.append("Last-Modified: ${format.format(Date(File(filePath).lastModified()))}\r\n")
                     responseHeaders.append("\r\n")
-                    val responseHeadersString = responseHeaders.toString()
                     Log.i(
                         TAG,
-                        "Http Status: **********\nRequest:\n${request}\n\nResponse:\n$responseHeadersString"
+                        "Http Status: **********\nRequest:\n${request}\n\nResponse:\n$responseHeaders"
                     )
                     val output = client.getOutputStream()
-                    output.write(responseHeadersString.toByteArray())
-                    val buffer = ByteBuffer.allocate(DEFAULT_BUFFER_SIZE)
+                    output.write(responseHeaders.toString().toByteArray())
+                    val buffer = ByteBuffer.allocate(
+                        min(
+                            Runtime.getRuntime().freeMemory() * 2,
+                            max(DEFAULT_BUFFER_SIZE.toLong(), size / 10)
+                        ).toInt()
+                    )
                     while (isRunning) {
                         buffer.clear()
                         val readCount = dataSource.readAt(skip, buffer)
@@ -158,7 +165,6 @@ internal class HttpStreamExtractor(
                             break
                         }
                         output.write(buffer.array(), 0, readCount)
-                        output.flush()
                         skip += readCount
                     }
                 }
