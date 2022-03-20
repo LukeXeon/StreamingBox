@@ -1,7 +1,6 @@
 package open.source.videobox
 
 import android.app.ProgressDialog
-import android.media.MediaPlayer
 import android.os.Bundle
 import android.util.Log
 import android.view.SurfaceView
@@ -13,6 +12,9 @@ import com.liulishuo.filedownloader.BaseDownloadTask
 import com.liulishuo.filedownloader.FileDownloadListener
 import com.liulishuo.filedownloader.FileDownloader
 import open.source.streamingbox.StreamingBox
+import tv.danmaku.ijk.media.player.AndroidMediaPlayer
+import tv.danmaku.ijk.media.player.IMediaPlayer
+import tv.danmaku.ijk.media.player.IjkMediaPlayer
 import java.io.File
 import kotlin.concurrent.thread
 
@@ -20,6 +22,7 @@ import kotlin.concurrent.thread
 class MainActivity : AppCompatActivity() {
     private lateinit var en: Button
     private lateinit var de: Button
+    private lateinit var de_ijk: Button
     private lateinit var v: SurfaceView
     private lateinit var seek: SeekBar
 
@@ -30,6 +33,7 @@ class MainActivity : AppCompatActivity() {
         en = findViewById(R.id.en)
         de = findViewById(R.id.de)
         v = findViewById(R.id.v)
+        de_ijk = findViewById(R.id.de_ijk)
         seek = findViewById(R.id.seek)
         val file = File(cacheDir, "encode.mp4")
         en.setOnClickListener {
@@ -114,40 +118,52 @@ class MainActivity : AppCompatActivity() {
                     override fun warn(task: BaseDownloadTask) {}
                 }).start()
         }
-        val m = MediaPlayer()
+        var m = AndroidMediaPlayer()
+        val ijk = IjkMediaPlayer()
         de.setOnClickListener {
-            m.reset()
-            val ds = StreamingBox.openLocalHttpUri(this, file)
-            m.isLooping = true
-            m.setDataSource(this, ds)
-            m.prepareAsync()
-            m.setOnPreparedListener {
-                it.start()
-                m.setSurface(v.holder.surface)
-            }
-            seek.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-                override fun onProgressChanged(
-                    seekBar: SeekBar?,
-                    progress: Int,
-                    fromUser: Boolean,
-                ) {
-                    val duration = m.duration
-                    val p = progress / 100f
-                    val seekTo = (duration * p)
-                    Log.d(TAG, "onProgressChanged: $seekTo $duration $p")
-                    m.seekTo(seekTo.toInt())
-                }
-
-                override fun onStartTrackingTouch(seekBar: SeekBar?) {
-
-                }
-
-                override fun onStopTrackingTouch(seekBar: SeekBar?) {
-
-                }
-
-            })
+            m.release()
+            m = AndroidMediaPlayer()
+            ijk.reset()
+            start(m, file)
         }
+        de_ijk.setOnClickListener {
+            m.release()
+            ijk.reset()
+            start(ijk, file)
+        }
+    }
+
+    private fun start(m: IMediaPlayer, file: File) {
+        val ds = StreamingBox.openLocalHttpUri(this, file)
+        m.isLooping = true
+        m.setDataSource(this, ds)
+        m.prepareAsync()
+        m.setOnPreparedListener {
+            it.start()
+            m.setSurface(v.holder.surface)
+        }
+        seek.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(
+                seekBar: SeekBar?,
+                progress: Int,
+                fromUser: Boolean,
+            ) {
+                val duration = m.duration
+                val p = progress / 100f
+                val seekTo = (duration * p)
+                Log.d(TAG, "onProgressChanged: $seekTo $duration $p")
+                m.seekTo(seekTo.toLong())
+            }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {
+
+            }
+
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+
+            }
+
+        })
     }
 
     companion object {
