@@ -5,7 +5,7 @@ import java.nio.ByteBuffer
 import java.nio.channels.SeekableByteChannel
 
 internal class MediaDataSourceImpl(
-    private val channel: SeekableByteChannel
+    private val channel: SeekableByteChannel,
 ) : IMediaDataSource {
 
     private val lock = ByteBuffer.allocate(1)

@@ -16,7 +16,7 @@ import kotlin.math.min
 
 internal class HttpStreamExtractor(
     private val context: Context,
-    private val provider: IMediaDataSource.Provider
+    private val provider: IMediaDataSource.Provider,
 ) : Runnable, ThreadFactory, RejectedExecutionHandler {
     private val executor = ThreadPoolExecutor(
         0, min(4, Runtime.getRuntime().availableProcessors()),
@@ -126,7 +126,7 @@ internal class HttpStreamExtractor(
                         // It is a seek or skip request if there's a Range
                         // header
                         responseHeaders.append("HTTP/1.1 206 Partial Content\r\n")
-                        responseHeaders.append("Content-Length: ${size - 1 - skip}\r\n")
+                        responseHeaders.append("Content-Length: ${size - skip}\r\n")
                         responseHeaders.append("Content-Range: bytes $skip-${(size - 1)}/${size}\r\n")
                     } else {
                         responseHeaders.append("HTTP/1.1 200 OK\r\n")

@@ -4,6 +4,7 @@ import android.media.MediaPlayer
 import android.os.AsyncTask
 import android.os.Bundle
 import android.util.Log
+import android.view.SurfaceHolder
 import android.view.SurfaceView
 import android.widget.Button
 import android.widget.SeekBar
@@ -44,26 +45,30 @@ class MainActivity : AppCompatActivity() {
         }
         de.setOnClickListener {
             val m = IjkMediaPlayer()
-            val uri = StreamingBox.openHTTPStream(this, file)
-
+            val ds = StreamingBox.openHTTPStream(this, file)
             m.isLooping = true
-            m.setDataSource(this, uri, mapOf("Connection" to "keep-alive"))
+            m.setDataSource(this, ds)
             m.prepareAsync()
             m.setOnPreparedListener {
                 it.start()
+                v.holder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS)
                 m.setSurface(v.holder.surface)
+            }
+            m.setOnErrorListener { mp, what, extra ->
+                Log.d(TAG, "onCreate: w=" + what + " e=" + extra)
+                true
             }
             seek.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
                 override fun onProgressChanged(
                     seekBar: SeekBar?,
                     progress: Int,
-                    fromUser: Boolean
+                    fromUser: Boolean,
                 ) {
                     val duration = m.duration
                     val p = progress / 100f
-                    val seekTo = (duration * p).toLong()
+                    val seekTo = (duration * p)
                     Log.d(TAG, "onProgressChanged: $seekTo $duration $p")
-                    m.seekTo(seekTo)
+                    m.seekTo(seekTo.toLong())
                 }
 
                 override fun onStartTrackingTouch(seekBar: SeekBar?) {

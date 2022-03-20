@@ -15,11 +15,13 @@ import java.nio.channels.SeekableByteChannel
 
 object StreamingBox {
 
+    private const val TAG = "StreamingBox"
+
     private fun newEncryptedFile(
         context: Context,
         file: File,
     ): EncryptedMediaFile {
-        NioCompat.install(context)
+        IoCompat.install(context)
         return EncryptedMediaFile.Builder(
             context, file,
             MasterKey.Builder(context)
@@ -62,7 +64,7 @@ object StreamingBox {
     ): IMediaDataSource {
         val impl = MediaDataSourceImpl(openChannel(context, file))
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            MediaDataSourceApi23(impl)
+            MediaDataSourceCompat(impl)
         } else {
             impl
         }
@@ -73,9 +75,9 @@ object StreamingBox {
         return HttpStreamProvider.mapping(context, file)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
     @JvmStatic
-    fun openFd(context: Context, file: File): ParcelFileDescriptor {
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun openFileDescriptor(context: Context, file: File): ParcelFileDescriptor {
         val m = context.getSystemService(Context.STORAGE_SERVICE) as StorageManager
         val callback = MediaProxyFdCallback(openMediaDataSource(context, file))
         return m.openProxyFileDescriptor(

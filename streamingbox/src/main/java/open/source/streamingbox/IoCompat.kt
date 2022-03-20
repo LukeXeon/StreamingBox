@@ -2,7 +2,7 @@ package open.source.streamingbox
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.os.Build
+import android.os.*
 import android.util.Log
 import dalvik.system.DexFile
 import java.io.File
@@ -10,9 +10,10 @@ import java.nio.ByteBuffer
 import java.nio.MappedByteBuffer
 import java.nio.channels.*
 
-internal object NioCompat {
+@SuppressLint("DiscouragedPrivateApi")
+internal object IoCompat {
 
-    private const val TAG = "NioCompat"
+    private const val TAG = "IoCompat"
 
     private const val PATCH_CLASS_NAME = "java.nio.channels.SeekableByteChannel"
 

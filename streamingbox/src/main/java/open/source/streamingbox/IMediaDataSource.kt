@@ -2,7 +2,6 @@ package open.source.streamingbox
 
 import java.io.Closeable
 import java.nio.ByteBuffer
-import java.nio.channels.SeekableByteChannel
 
 interface IMediaDataSource : Closeable {
 
@@ -10,7 +9,7 @@ interface IMediaDataSource : Closeable {
         position: Long,
         buffer: ByteArray,
         offset: Int,
-        size: Int
+        size: Int,
     ): Int {
         return readAt(position, ByteBuffer.wrap(buffer, offset, size))
     }

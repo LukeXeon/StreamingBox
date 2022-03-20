@@ -5,6 +5,6 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 
 @RequiresApi(Build.VERSION_CODES.M)
-internal class MediaDataSourceApi23(
-    private val impl: IMediaDataSource
+internal class MediaDataSourceCompat(
+    private val impl: IMediaDataSource,
 ) : MediaDataSource(), IMediaDataSource by impl
