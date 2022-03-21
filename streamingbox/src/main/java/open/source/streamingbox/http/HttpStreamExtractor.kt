@@ -30,7 +30,7 @@ internal class HttpStreamExtractor(
         60L, TimeUnit.SECONDS,
         SynchronousQueue(), this, this
     )
-    private val server = ServerSocket(0)
+    private val server = ServerSocket(0, 10, null)
     private val isRunning: Boolean
         get() {
             val t = thread
@@ -79,6 +79,8 @@ internal class HttpStreamExtractor(
         while (isRunning) {
             try {
                 val client = server.accept() ?: continue
+                client.tcpNoDelay = true
+                client.keepAlive = true
                 Log.i(TAG, "client connected at $listenPort")
                 executor.execute(Task(client))
             } catch (e: InterruptedException) {
