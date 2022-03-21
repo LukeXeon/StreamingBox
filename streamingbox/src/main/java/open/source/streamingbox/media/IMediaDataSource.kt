@@ -1,4 +1,4 @@
-package open.source.streamingbox
+package open.source.streamingbox.media
 
 import java.io.Closeable
 import java.nio.ByteBuffer
@@ -10,9 +10,7 @@ interface IMediaDataSource : Closeable {
         buffer: ByteArray,
         offset: Int,
         size: Int,
-    ): Int {
-        return readAt(position, ByteBuffer.wrap(buffer, offset, size))
-    }
+    ): Int
 
     fun readAt(position: Long, buffer: ByteBuffer): Int
 

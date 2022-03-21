@@ -1,9 +1,10 @@
-package open.source.streamingbox
+package open.source.streamingbox.http
 
 import android.content.Context
 import android.os.Process
 import android.system.OsConstants
 import android.util.Log
+import open.source.streamingbox.media.IMediaDataSource
 import java.io.Closeable
 import java.io.File
 import java.io.IOException

@@ -6,8 +6,12 @@ import android.os.Build
 import android.os.ParcelFileDescriptor
 import android.os.storage.StorageManager
 import androidx.annotation.RequiresApi
-import androidx.security.crypto.EncryptedMediaFile
-import androidx.security.crypto.MasterKey
+import open.source.streamingbox.http.HttpStreamProvider
+import open.source.streamingbox.media.*
+import open.source.streamingbox.media.EncryptedMediaDataSource
+import open.source.streamingbox.media.IoCompat
+import open.source.streamingbox.media.MediaDataSourceCompat
+import open.source.streamingbox.media.MediaProxyFdCallback
 import java.io.File
 import java.io.InputStream
 import java.io.OutputStream
@@ -17,26 +21,11 @@ object StreamingBox {
 
     private const val TAG = "StreamingBox"
 
-    private fun newEncryptedFile(
-        context: Context,
-        file: File,
-    ): EncryptedMediaFile {
-        IoCompat.install(context)
-        return EncryptedMediaFile.Builder(
-            context, file,
-            MasterKey.Builder(context)
-                .setRequestStrongBoxBacked(true)
-                .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-                .build(),
-            EncryptedMediaFile.FileEncryptionScheme.AES256_GCM_HKDF_4KB
-        ).build()
-    }
-
     private fun openChannel(
         context: Context,
         file: File,
     ): SeekableByteChannel {
-        return newEncryptedFile(context, file).openSeekableByteChannel()
+        return IoCompat.newEncryptedFile(context, file).openSeekableByteChannel()
     }
 
     @JvmStatic
@@ -46,7 +35,7 @@ object StreamingBox {
         file: File,
         append: Boolean = false,
     ): OutputStream {
-        return newEncryptedFile(context, file).openOutputStream(append)
+        return IoCompat.newEncryptedFile(context, file).openOutputStream(append)
     }
 
     @JvmStatic
@@ -54,7 +43,7 @@ object StreamingBox {
         context: Context,
         file: File,
     ): InputStream {
-        return newEncryptedFile(context, file).openInputStream()
+        return IoCompat.newEncryptedFile(context, file).openInputStream()
     }
 
     @JvmStatic
@@ -62,7 +51,7 @@ object StreamingBox {
         context: Context,
         file: File,
     ): IMediaDataSource {
-        val impl = MediaDataSourceImpl(openChannel(context, file))
+        val impl = EncryptedMediaDataSource(openChannel(context, file))
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             MediaDataSourceCompat(impl)
         } else {
@@ -72,7 +61,7 @@ object StreamingBox {
 
     @JvmStatic
     fun openLocalHttpUri(context: Context, file: File): Uri {
-        return HttpStreamProvider.mapping(context, file)
+        return HttpStreamProvider.getUri(context, file)
     }
 
     @JvmStatic

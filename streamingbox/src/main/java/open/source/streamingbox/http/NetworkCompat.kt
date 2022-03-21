@@ -1,4 +1,4 @@
-package open.source.streamingbox
+package open.source.streamingbox.http
 
 import android.annotation.SuppressLint
 import android.content.Context

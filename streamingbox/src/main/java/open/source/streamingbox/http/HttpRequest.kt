@@ -1,4 +1,4 @@
-package open.source.streamingbox
+package open.source.streamingbox.http
 
 import android.net.Uri
 import android.util.ArrayMap

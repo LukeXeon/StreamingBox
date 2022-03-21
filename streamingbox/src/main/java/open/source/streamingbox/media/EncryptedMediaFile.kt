@@ -13,6 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+@file:Suppress("PackageDirectoryMismatch")
+
 package androidx.security.crypto
 
 import android.annotation.SuppressLint
@@ -22,7 +25,7 @@ import com.google.crypto.tink.StreamingAead
 import com.google.crypto.tink.integration.android.AndroidKeysetManager
 import com.google.crypto.tink.streamingaead.AesGcmHkdfStreamingKeyManager
 import com.google.crypto.tink.streamingaead.StreamingAeadConfig
-import open.source.streamingbox.IoCompat
+import open.source.streamingbox.media.IoCompat
 import java.io.*
 import java.nio.channels.SeekableByteChannel
 import java.nio.charset.StandardCharsets

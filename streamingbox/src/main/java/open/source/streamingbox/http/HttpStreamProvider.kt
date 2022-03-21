@@ -1,52 +1,46 @@
-package open.source.streamingbox
+package open.source.streamingbox.http
 
 import android.content.ContentProvider
 import android.content.ContentValues
 import android.content.Context
 import android.database.Cursor
+import android.database.MatrixCursor
 import android.net.Uri
-import android.os.Bundle
+import open.source.streamingbox.StreamingBox
+import open.source.streamingbox.media.IMediaDataSource
 import java.io.File
 import java.io.FileNotFoundException
 
 internal class HttpStreamProvider : ContentProvider(), IMediaDataSource.Provider {
 
     companion object {
-        private const val KEY_URI = "uri"
         private const val KEY_FILE = "file"
+        private const val SELECTION_FILE = "${KEY_FILE}=?"
         private const val TYPE = "video/mp4"
-        private const val METHOD_MAPPING = "mapping"
 
-        fun mapping(context: Context, file: File): Uri {
-            val bundle = context.contentResolver.call(
-                Uri.parse("content://${context.packageName}.streaming-box.http-stream-provider"),
-                METHOD_MAPPING,
-                null,
-                Bundle().apply {
-                    putParcelable(KEY_URI, Uri.parse(file.canonicalPath))
-                }
+        fun getUri(context: Context, file: File): Uri {
+            val cursor = context.contentResolver.query(
+                Uri.parse("content://${context.packageName}.streaming-box.http-stream-provider")
+                    .buildUpon()
+                    .appendQueryParameter(KEY_FILE, file.canonicalPath)
+                    .build(),
+                arrayOf(KEY_FILE),
+                SELECTION_FILE,
+                arrayOf(file.canonicalPath),
+                null
             )
-            return bundle?.getParcelable(KEY_URI) ?: throw FileNotFoundException()
+            if (cursor != null) {
+                cursor.moveToFirst()
+                val uri = Uri.parse(cursor.getString(0))
+                cursor.close()
+                return uri
+            }
+            throw FileNotFoundException()
         }
     }
 
     private val extractor by lazy {
         HttpStreamExtractor(requireNotNull(context), this).apply { start() }
-    }
-
-    override fun call(method: String, arg: String?, extras: Bundle?): Bundle? {
-        if (method == METHOD_MAPPING && extras != null && extras.containsKey(KEY_URI)) {
-            val uri = requireNotNull(extras.getParcelable<Uri>(KEY_URI))
-            return Bundle().apply {
-                putParcelable(
-                    KEY_URI, Uri.parse("http://localhost:${extractor.listenPort}")
-                        .buildUpon()
-                        .appendQueryParameter(KEY_FILE, uri.toString())
-                        .build()
-                )
-            }
-        }
-        return null
     }
 
     override fun open(url: String): IMediaDataSource {
@@ -64,7 +58,20 @@ internal class HttpStreamProvider : ContentProvider(), IMediaDataSource.Provider
         selectionArgs: Array<out String>?,
         sortOrder: String?,
     ): Cursor? {
-        throw UnsupportedOperationException()
+        if (!projection.isNullOrEmpty()
+            && projection.contains(KEY_FILE)
+            && selection == SELECTION_FILE
+            && !selectionArgs.isNullOrEmpty()
+        ) {
+            val index = projection.indexOf(KEY_FILE)
+            val row = arrayOfNulls<Any>(projection.size)
+            row[index] = Uri.parse("http://localhost:${extractor.listenPort}")
+                .buildUpon()
+                .appendQueryParameter(KEY_FILE, uri.toString())
+                .toString()
+            return MatrixCursor(projection).apply { addRow(row) }
+        }
+        return null
     }
 
     override fun getType(uri: Uri): String = TYPE

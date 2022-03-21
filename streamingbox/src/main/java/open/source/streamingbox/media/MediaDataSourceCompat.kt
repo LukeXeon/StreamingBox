@@ -1,4 +1,4 @@
-package open.source.streamingbox
+package open.source.streamingbox.media
 
 import android.media.MediaDataSource
 import android.os.Build

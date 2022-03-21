@@ -1,16 +1,19 @@
-package open.source.streamingbox
+package open.source.streamingbox.media
 
 import android.annotation.SuppressLint
 import android.content.Context
 import android.os.*
 import android.util.Log
+import androidx.security.crypto.EncryptedMediaFile
+import androidx.security.crypto.MasterKey
 import dalvik.system.DexFile
+import open.source.streamingbox.R
 import java.io.File
 import java.nio.ByteBuffer
 import java.nio.MappedByteBuffer
 import java.nio.channels.*
 
-@SuppressLint("DiscouragedPrivateApi")
+
 internal object IoCompat {
 
     private const val TAG = "IoCompat"
@@ -30,14 +33,14 @@ internal object IoCompat {
         }
     }
 
-    fun install(context: Context) {
+    private fun applyPatch(context: Context) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
             synchronized(patchLock) {
                 if (!patchLock[0] && runCatching { Class.forName(PATCH_CLASS_NAME) }.isFailure) {
                     val dexBytes = context.resources
                         .openRawResource(R.raw.java_nio_channels_seekable_byte_channel)
                         .use { it.readBytes() }
-                    val outputFile = File(context.codeCacheDir, "${PATCH_CLASS_NAME}.dex")
+                    val outputFile = File(context.codeCacheDir, "$PATCH_CLASS_NAME.dex")
                     outputFile.apply {
                         createNewFile()
                         outputStream().use { output ->
@@ -57,6 +60,21 @@ internal object IoCompat {
                 }
             }
         }
+    }
+
+    fun newEncryptedFile(
+        context: Context,
+        file: File,
+    ): EncryptedMediaFile {
+        applyPatch(context)
+        return EncryptedMediaFile.Builder(
+            context, file,
+            MasterKey.Builder(context)
+                .setRequestStrongBoxBacked(true)
+                .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+                .build(),
+            EncryptedMediaFile.FileEncryptionScheme.AES256_GCM_HKDF_4KB
+        ).build()
     }
 
     fun wrap(channel: FileChannel): FileChannel {
