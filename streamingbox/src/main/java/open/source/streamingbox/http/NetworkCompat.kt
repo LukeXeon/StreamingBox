@@ -11,6 +11,8 @@ import android.os.Process
 import android.system.OsConstants
 import android.util.Log
 import android.util.LruCache
+import libcore.net.NetworkSecurityPolicy
+import open.source.streamingbox.R
 import java.io.File
 import java.net.InetAddress
 import java.net.InetSocketAddress
@@ -121,6 +123,33 @@ internal object NetworkCompat {
                             )
                         }
                     return connection?.uid ?: Process.INVALID_UID
+                }
+            }
+        }
+    }
+
+    fun enableLocalHostCleartextTraffic(context: Context) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            if (!android.security.NetworkSecurityPolicy.getInstance()
+                    .isCleartextTrafficPermitted("localhost")
+            ) {
+                try {
+                    val delegate = NetworkSecurityPolicy.getInstance()
+                    NetworkSecurityPolicy.setInstance(object : NetworkSecurityPolicy() {
+                        override fun isCleartextTrafficPermitted(): Boolean {
+                            return delegate.isCleartextTrafficPermitted
+                        }
+
+                        override fun isCleartextTrafficPermitted(hostname: String?): Boolean {
+                            return delegate.isCleartextTrafficPermitted(hostname)
+                                    || hostname.equals("localhost")
+                        }
+                    })
+                } catch (e: Throwable) {
+                    val message = context.resources
+                        .openRawResource(R.raw.streaming_box_network_security_error_message)
+                        .use { it.reader().readText() }
+                    throw AssertionError(message, e)
                 }
             }
         }

@@ -6,10 +6,6 @@ import android.content.Context
 import android.database.Cursor
 import android.database.MatrixCursor
 import android.net.Uri
-import android.os.Build
-import android.util.Log
-import libcore.net.NetworkSecurityPolicy
-import open.source.streamingbox.R
 import open.source.streamingbox.StreamingBox
 import open.source.streamingbox.media.IMediaDataSource
 import java.io.File
@@ -24,31 +20,7 @@ internal class HttpStreamProvider : ContentProvider(), IMediaDataSource.Provider
         private const val TAG = "HttpStreamProvider"
 
         fun getUriFrom(context: Context, file: File): Uri {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                if (!android.security.NetworkSecurityPolicy.getInstance()
-                        .isCleartextTrafficPermitted("localhost")
-                ) {
-                    try {
-                        val delegate = NetworkSecurityPolicy.getInstance()
-                        Log.d(TAG, "openLocalHttpUri: $delegate")
-                        NetworkSecurityPolicy.setInstance(object : NetworkSecurityPolicy() {
-                            override fun isCleartextTrafficPermitted(): Boolean {
-                                return delegate.isCleartextTrafficPermitted
-                            }
-
-                            override fun isCleartextTrafficPermitted(hostname: String?): Boolean {
-                                return delegate.isCleartextTrafficPermitted(hostname)
-                                        || hostname.equals("localhost")
-                            }
-                        })
-                    } catch (e: Throwable) {
-                        val message = context.resources
-                            .openRawResource(R.raw.streaming_box_network_security_error_message)
-                            .use { it.reader().readText() }
-                        throw AssertionError(message, e)
-                    }
-                }
-            }
+            NetworkCompat.enableLocalHostCleartextTraffic(context)
             val cursor = context.contentResolver.query(
                 Uri.parse("content://${context.packageName}.streaming-box.http-stream-provider")
                     .buildUpon()
