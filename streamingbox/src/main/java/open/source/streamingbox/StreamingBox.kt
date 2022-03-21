@@ -57,7 +57,7 @@ object StreamingBox {
 
     @JvmStatic
     fun openLocalHttpUri(context: Context, file: File): Uri {
-        return HttpStreamProvider.getUri(context, file)
+        return HttpStreamProvider.getUriFrom(context, file)
     }
 
     @JvmStatic

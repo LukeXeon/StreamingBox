@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
     package="open.source.streamingbox">
+
     <uses-permission android:name="android.permission.INTERNET" />
-    <application
-        android:networkSecurityConfig="@xml/streaming_box_network_security_config"
-        tools:targetApi="n">
+    <application>
         <provider
             android:name=".http.HttpStreamProvider"
             android:authorities="${applicationId}.streaming-box.http-stream-provider"

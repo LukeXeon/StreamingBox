@@ -11,3 +11,4 @@ dependencyResolutionManagement {
 rootProject.name = "VedioBox"
 include ':app'
 include ':streamingbox'
+include ':framework-stub'
