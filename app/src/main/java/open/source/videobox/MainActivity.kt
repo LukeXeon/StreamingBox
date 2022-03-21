@@ -1,6 +1,7 @@
 package open.source.videobox
 
 import android.app.ProgressDialog
+import android.media.MediaPlayer
 import android.os.Bundle
 import android.util.Log
 import android.view.SurfaceView
@@ -120,6 +121,11 @@ class MainActivity : AppCompatActivity() {
         }
         var m = AndroidMediaPlayer()
         val ijk = IjkMediaPlayer()
+        MediaPlayer::class.java.runCatching {
+            getDeclaredField("DEBUG").apply {
+                isAccessible = true
+            }.setBoolean(null, true)
+        }
         de.setOnClickListener {
             m.release()
             m = AndroidMediaPlayer()
@@ -127,6 +133,7 @@ class MainActivity : AppCompatActivity() {
             start(m, file)
         }
         de_ijk.setOnClickListener {
+
             m.release()
             ijk.reset()
             start(ijk, file)

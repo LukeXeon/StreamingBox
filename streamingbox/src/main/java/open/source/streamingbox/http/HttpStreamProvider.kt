@@ -35,7 +35,7 @@ internal class HttpStreamProvider : ContentProvider(), IMediaDataSource.Provider
                 cursor.close()
                 return uri
             }
-            throw FileNotFoundException()
+            throw FileNotFoundException(file.canonicalPath)
         }
     }
 
@@ -67,7 +67,7 @@ internal class HttpStreamProvider : ContentProvider(), IMediaDataSource.Provider
             val row = arrayOfNulls<Any>(projection.size)
             row[index] = Uri.parse("http://localhost:${extractor.listenPort}")
                 .buildUpon()
-                .appendQueryParameter(KEY_FILE, uri.toString())
+                .appendQueryParameter(KEY_FILE, selectionArgs[index])
                 .toString()
             return MatrixCursor(projection).apply { addRow(row) }
         }
