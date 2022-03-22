@@ -13,9 +13,11 @@ import com.liulishuo.filedownloader.BaseDownloadTask
 import com.liulishuo.filedownloader.FileDownloadListener
 import com.liulishuo.filedownloader.FileDownloader
 import open.source.streamingbox.StreamingBox
+import open.source.streamingbox.setEncryptedDataSource
 import tv.danmaku.ijk.media.player.AndroidMediaPlayer
 import tv.danmaku.ijk.media.player.IMediaPlayer
 import tv.danmaku.ijk.media.player.IjkMediaPlayer
+import tv.danmaku.ijk.media.player.misc.IMediaDataSource
 import java.io.File
 import kotlin.concurrent.thread
 
@@ -119,58 +121,94 @@ class MainActivity : AppCompatActivity() {
                     override fun warn(task: BaseDownloadTask) {}
                 }).start()
         }
-        var m = AndroidMediaPlayer()
-        val ijk = IjkMediaPlayer()
         MediaPlayer::class.java.runCatching {
             getDeclaredField("DEBUG").apply {
                 isAccessible = true
             }.setBoolean(null, true)
         }
+        var m = AndroidMediaPlayer()
+        val ijk = IjkMediaPlayer()
         de.setOnClickListener {
             m.release()
             m = AndroidMediaPlayer()
-            ijk.reset()
-            start(m, file)
+            m.isLooping = true
+            m.internalMediaPlayer.setEncryptedDataSource(this, file)
+            m.prepareAsync()
+            m.setOnPreparedListener {
+                it.start()
+                m.setSurface(v.holder.surface)
+            }
+            seek.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+                override fun onProgressChanged(
+                    seekBar: SeekBar?,
+                    progress: Int,
+                    fromUser: Boolean,
+                ) {
+                    val duration = m.duration
+                    val p = progress / 100f
+                    val seekTo = (duration * p)
+                    Log.d(TAG, "onProgressChanged: $seekTo $duration $p")
+                    m.seekTo(seekTo.toLong())
+                }
+
+                override fun onStartTrackingTouch(seekBar: SeekBar?) {
+
+                }
+
+                override fun onStopTrackingTouch(seekBar: SeekBar?) {
+
+                }
+
+            })
         }
         de_ijk.setOnClickListener {
+            val ds = StreamingBox.openMediaDataSource(this, file)
+            ijk.isLooping = true
+            ijk.setDataSource(object : IMediaDataSource {
+                override fun readAt(p0: Long, p1: ByteArray, p2: Int, p3: Int): Int {
+                    return ds.readAt(p0, p1, p2, p3)
+                }
 
-            m.release()
-            ijk.reset()
-            start(ijk, file)
+                override fun getSize(): Long {
+                    return ds.getSize()
+                }
+
+                override fun close() {
+                    ds.close()
+                }
+            })
+            ijk.prepareAsync()
+            ijk.setOnPreparedListener {
+                it.start()
+                ijk.setSurface(v.holder.surface)
+            }
+            seek.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+                override fun onProgressChanged(
+                    seekBar: SeekBar?,
+                    progress: Int,
+                    fromUser: Boolean,
+                ) {
+                    val duration = ijk.duration
+                    val p = progress / 100f
+                    val seekTo = (duration * p)
+                    Log.d(TAG, "onProgressChanged: $seekTo $duration $p")
+                    ijk.seekTo(seekTo.toLong())
+                }
+
+                override fun onStartTrackingTouch(seekBar: SeekBar?) {
+
+                }
+
+                override fun onStopTrackingTouch(seekBar: SeekBar?) {
+
+                }
+
+            })
         }
     }
 
     private fun start(m: IMediaPlayer, file: File) {
-        val ds = StreamingBox.openLocalHttpUri(this, file)
-        m.isLooping = true
-        m.setDataSource(this, ds)
-        m.prepareAsync()
-        m.setOnPreparedListener {
-            it.start()
-            m.setSurface(v.holder.surface)
-        }
-        seek.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(
-                seekBar: SeekBar?,
-                progress: Int,
-                fromUser: Boolean,
-            ) {
-                val duration = m.duration
-                val p = progress / 100f
-                val seekTo = (duration * p)
-                Log.d(TAG, "onProgressChanged: $seekTo $duration $p")
-                m.seekTo(seekTo.toLong())
-            }
 
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {
-
-            }
-
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {
-
-            }
-
-        })
     }
 
     companion object {
