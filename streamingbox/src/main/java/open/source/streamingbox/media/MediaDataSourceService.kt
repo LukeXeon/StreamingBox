@@ -47,6 +47,10 @@ internal class MediaDataSourceService(
 
         private var skip: Long = 0
 
+        private val inputStream by lazy {
+            DataStream()
+        }
+
         override fun connect() {
             connected = true
             responseCode = HTTP_OK
@@ -92,8 +96,9 @@ internal class MediaDataSourceService(
 
         override fun usingProxy(): Boolean = true
 
+
         override fun getInputStream(): InputStream {
-            return DataStream()
+            return inputStream
         }
 
         private inner class DataStream : InputStream() {
