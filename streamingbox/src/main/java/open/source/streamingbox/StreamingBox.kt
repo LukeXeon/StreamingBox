@@ -1,6 +1,7 @@
 package open.source.streamingbox
 
 import android.content.Context
+import android.media.MediaDataSource
 import android.net.Uri
 import android.os.Build
 import android.os.ParcelFileDescriptor
@@ -16,13 +17,6 @@ import java.nio.channels.SeekableByteChannel
 object StreamingBox {
 
     private const val TAG = "StreamingBox"
-
-    private fun openChannel(
-        context: Context,
-        file: File,
-    ): SeekableByteChannel {
-        return IoCompat.newEncryptedFile(context, file).openSeekableByteChannel()
-    }
 
     @JvmStatic
     @JvmOverloads
@@ -47,7 +41,7 @@ object StreamingBox {
         context: Context,
         file: File,
     ): IMediaDataSource {
-        val impl = EncryptedMediaDataSource(openChannel(context, file))
+        val impl = EncryptedMediaDataSource(openSeekableByteChannel(context, file))
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             MediaDataSourceCompat(impl)
         } else {
@@ -56,13 +50,31 @@ object StreamingBox {
     }
 
     @JvmStatic
-    fun openLocalHttpUri(context: Context, file: File): Uri {
+    fun openLocalHttpStream(context: Context, file: File): Uri {
         return HttpStreamProvider.getUriFrom(context, file)
     }
 
     @JvmStatic
+    fun openSeekableByteChannel(
+        context: Context,
+        file: File,
+    ): SeekableByteChannel {
+        return IoCompat.newEncryptedFile(context, file).openSeekableByteChannel()
+    }
+
+    @JvmStatic
+    @RequiresApi(Build.VERSION_CODES.M)
+    fun openAndroidMediaDataSource(
+        context: Context,
+        file: File,
+    ): MediaDataSource {
+        return MediaDataSourceCompat(EncryptedMediaDataSource(openSeekableByteChannel(context,
+            file)))
+    }
+
+    @JvmStatic
     @RequiresApi(Build.VERSION_CODES.O)
-    fun openFileDescriptor(context: Context, file: File): ParcelFileDescriptor {
+    fun openParcelFileDescriptor(context: Context, file: File): ParcelFileDescriptor {
         val m = context.getSystemService(Context.STORAGE_SERVICE) as StorageManager
         val callback = MediaProxyFdCallback(openMediaDataSource(context, file))
         return m.openProxyFileDescriptor(
