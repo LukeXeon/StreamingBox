@@ -36,13 +36,11 @@ object StreamingBox {
     }
 
     @JvmStatic
-    @JvmOverloads
     fun openOutputStream(
         context: Context,
         file: File,
-        append: Boolean = false,
     ): OutputStream {
-        return newEncryptedFile(context, file).openOutputStream(append)
+        return newEncryptedFile(context, file).openOutputStream()
     }
 
     @JvmStatic

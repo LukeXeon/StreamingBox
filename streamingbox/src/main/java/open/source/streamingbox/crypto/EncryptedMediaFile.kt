@@ -179,14 +179,14 @@ internal class EncryptedMediaFile internal constructor(
      * @throws IOException              when the file already exists or is not available for writing
      */
     @Throws(GeneralSecurityException::class, IOException::class)
-    fun openOutputStream(append: Boolean): OutputStream {
-        if (file.exists() && !append) {
+    fun openOutputStream(): OutputStream {
+        if (file.exists()) {
             throw IOException(
                 "output file already exists, please use a new file: "
                         + file.name
             )
         }
-        val fileOutputStream = FileOutputStream(file, append)
+        val fileOutputStream = FileOutputStream(file)
         return streamingAead.newEncryptingStream(
             fileOutputStream,
             file.name.toByteArray(StandardCharsets.UTF_8)
