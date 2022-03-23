@@ -12,7 +12,7 @@ import java.net.URLConnection
 import java.net.URLStreamHandler
 
 @SuppressLint("DiscouragedPrivateApi")
-class MediaDataSourceService(
+internal class MediaDataSourceService(
     private val dataSource: IMediaDataSource,
 ) : IMediaHTTPService.Stub() {
 
