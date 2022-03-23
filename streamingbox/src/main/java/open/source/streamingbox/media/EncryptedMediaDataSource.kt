@@ -14,23 +14,25 @@ internal class EncryptedMediaDataSource(
     private var temp: WeakReference<ByteBuffer>? = null
 
     override fun readAt(position: Long, buffer: ByteArray, offset: Int, size: Int): Int {
-        var tmp = temp?.get()
-        var changed = false
-        tmp = if (tmp != null && tmp.hasArray() && tmp.array() === buffer) {
-            tmp.apply {
-                clear()
-                position(offset)
-                limit(min(offset + size, capacity()))
+        synchronized(buf1) {
+            var tmp = temp?.get()
+            var changed = false
+            tmp = if (tmp != null && tmp.hasArray() && tmp.array() === buffer) {
+                tmp.apply {
+                    clear()
+                    position(offset)
+                    limit(min(offset + size, capacity()))
+                }
+            } else {
+                changed = true
+                requireNotNull(ByteBuffer.wrap(buffer, offset, size))
             }
-        } else {
-            changed = true
-            requireNotNull(ByteBuffer.wrap(buffer, offset, size))
+            val count = readAt(position, tmp)
+            if (changed) {
+                temp = WeakReference(tmp)
+            }
+            return count
         }
-        val count = readAt(position, tmp)
-        if (changed) {
-            temp = WeakReference(tmp)
-        }
-        return count
     }
 
     @SuppressLint("NewApi")
