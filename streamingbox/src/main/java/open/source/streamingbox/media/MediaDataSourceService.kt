@@ -33,7 +33,7 @@ internal class MediaDataSourceService(
 
     private inner class URLHandler : URLStreamHandler() {
         override fun openConnection(u: URL?): URLConnection {
-            return DataConnection(u).apply {
+            return ProxyURLConnection(u).apply {
                 connect()
             }
         }
@@ -43,12 +43,12 @@ internal class MediaDataSourceService(
         }
     }
 
-    private inner class DataConnection(u: URL?) : HttpURLConnection(u) {
+    private inner class ProxyURLConnection(u: URL?) : HttpURLConnection(u) {
 
         private var skip: Long = 0
 
         private val inputStream by lazy {
-            DataStream()
+            ProxyInputStream()
         }
 
         override fun connect() {
@@ -96,14 +96,13 @@ internal class MediaDataSourceService(
 
         override fun usingProxy(): Boolean = true
 
-
         override fun getInputStream(): InputStream {
             return inputStream
         }
 
-        private inner class DataStream : InputStream() {
+        private inner class ProxyInputStream : InputStream() {
 
-            private var readCount: Long = 0
+            private var current: Long = 0
             private var buf1: ByteArray? = null
 
             @Synchronized
@@ -115,16 +114,16 @@ internal class MediaDataSourceService(
 
             @Synchronized
             override fun read(buffer: ByteArray, offset: Int, size: Int): Int {
-                val count = dataSource.readAt((skip + readCount), buffer, offset, size)
+                val count = dataSource.readAt((skip + current), buffer, offset, size)
                 if (count > 0) {
-                    readCount += count
+                    current += count
                 }
                 return count
             }
         }
     }
 
-    private inner class MediaConnection : MediaHTTPConnection() {
+    private inner class MediaProxyConnection : MediaHTTPConnection() {
         @Synchronized
         override fun connect(uri: String?, headers: String?): IBinder {
             val binder = super.connect(uri, headers)
@@ -150,6 +149,6 @@ internal class MediaDataSourceService(
     }
 
     override fun makeHTTPConnection(): IMediaHTTPConnection {
-        return MediaConnection()
+        return MediaProxyConnection()
     }
 }

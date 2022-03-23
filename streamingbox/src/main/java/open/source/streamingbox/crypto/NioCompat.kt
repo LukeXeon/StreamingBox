@@ -1,11 +1,9 @@
-package open.source.streamingbox.media
+package open.source.streamingbox.crypto
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.os.*
+import android.os.Build
 import android.util.Log
-import androidx.security.crypto.EncryptedMediaFile
-import androidx.security.crypto.MasterKey
 import dalvik.system.DexFile
 import open.source.streamingbox.R
 import java.io.File
@@ -14,7 +12,7 @@ import java.nio.MappedByteBuffer
 import java.nio.channels.*
 
 
-internal object IoCompat {
+internal object NioCompat {
 
     private const val TAG = "IoCompat"
 
@@ -33,7 +31,7 @@ internal object IoCompat {
         }
     }
 
-    private fun applyPatch(context: Context) {
+    fun applyPatch(context: Context) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
             synchronized(patchLock) {
                 if (!patchLock[0] && runCatching { Class.forName(PATCH_CLASS_NAME) }.isFailure) {
@@ -60,21 +58,6 @@ internal object IoCompat {
                 }
             }
         }
-    }
-
-    fun newEncryptedFile(
-        context: Context,
-        file: File,
-    ): EncryptedMediaFile {
-        applyPatch(context)
-        return EncryptedMediaFile.Builder(
-            context, file,
-            MasterKey.Builder(context)
-                .setRequestStrongBoxBacked(true)
-                .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-                .build(),
-            EncryptedMediaFile.FileEncryptionScheme.AES256_GCM_HKDF_4KB
-        ).build()
     }
 
     fun wrap(channel: FileChannel): FileChannel {

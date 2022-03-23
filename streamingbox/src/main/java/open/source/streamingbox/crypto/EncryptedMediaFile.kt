@@ -25,7 +25,7 @@ import com.google.crypto.tink.StreamingAead
 import com.google.crypto.tink.integration.android.AndroidKeysetManager
 import com.google.crypto.tink.streamingaead.AesGcmHkdfStreamingKeyManager
 import com.google.crypto.tink.streamingaead.StreamingAeadConfig
-import open.source.streamingbox.media.IoCompat
+import open.source.streamingbox.crypto.NioCompat
 import java.io.*
 import java.nio.channels.SeekableByteChannel
 import java.nio.charset.StandardCharsets
@@ -97,7 +97,6 @@ internal class EncryptedMediaFile internal constructor(
         masterKey: MasterKey,
         private val fileEncryptionScheme: FileEncryptionScheme,
     ) {
-
         private val context: Context = context.applicationContext
         private val masterKeyAlias: String = masterKey.keyAlias
 
@@ -118,6 +117,7 @@ internal class EncryptedMediaFile internal constructor(
          */
         @Throws(GeneralSecurityException::class, IOException::class)
         fun build(): EncryptedMediaFile {
+            NioCompat.applyPatch(context)
             StreamingAeadConfig.register()
             val streadmingAeadKeysetHandle = AndroidKeysetManager.Builder()
                 .withKeyTemplate(fileEncryptionScheme.keyTemplate)
@@ -139,7 +139,7 @@ internal class EncryptedMediaFile internal constructor(
             throw IOException("file doesn't exist: " + file.name)
         }
         return streamingAead.newSeekableDecryptingChannel(
-            IoCompat.wrap(FileInputStream(file).channel),
+            NioCompat.wrap(FileInputStream(file).channel),
             file.name.toByteArray(StandardCharsets.UTF_8)
         )
     }

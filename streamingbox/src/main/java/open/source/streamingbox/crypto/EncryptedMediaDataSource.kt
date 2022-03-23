@@ -1,6 +1,7 @@
-package open.source.streamingbox.media
+package open.source.streamingbox.crypto
 
 import android.annotation.SuppressLint
+import open.source.streamingbox.media.IMediaDataSource
 import java.lang.ref.WeakReference
 import java.nio.ByteBuffer
 import java.nio.channels.SeekableByteChannel
