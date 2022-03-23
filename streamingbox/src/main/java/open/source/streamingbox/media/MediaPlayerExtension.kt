@@ -1,11 +1,9 @@
-package open.source.streamingbox
+package open.source.streamingbox.media
 
 import android.media.MediaDataSource
 import android.media.MediaPlayer
 import android.os.Build
 import android.os.IBinder
-import open.source.streamingbox.media.MediaDataSourceService
-import open.source.streamingbox.media.IMediaDataSource
 
 private val nativeSetDataSource by lazy {
     MediaPlayer::class.java
