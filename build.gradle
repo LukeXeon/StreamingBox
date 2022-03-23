@@ -4,6 +4,7 @@ buildscript {
         google()
         mavenCentral()
         maven { url 'https://jitpack.io' }
+        jcenter()
         maven { url 'https://repo.spring.io/plugins-release/' }
     }
     dependencies {
