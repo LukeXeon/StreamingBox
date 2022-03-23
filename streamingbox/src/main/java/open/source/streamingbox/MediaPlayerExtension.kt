@@ -1,15 +1,35 @@
 package open.source.streamingbox
 
-import android.content.Context
 import android.media.MediaDataSource
 import android.media.MediaPlayer
 import android.os.Build
-import java.io.File
+import android.os.IBinder
+import open.source.streamingbox.media.MediaDataSourceService
+import open.source.streamingbox.media.IMediaDataSource
 
-fun MediaPlayer.setEncryptedDataSource(context: Context, file: File) {
+private val nativeSetDataSource by lazy {
+    MediaPlayer::class.java
+        .getDeclaredMethod(
+            "nativeSetDataSource",
+            IBinder::class.java,
+            String::class.java,
+            Array<String>::class.java,
+            Array<String>::class.java
+        ).apply {
+            isAccessible = true
+        }
+}
+
+fun MediaPlayer.setDataSource(dataSource: IMediaDataSource) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-        setDataSource(StreamingBox.openMediaDataSource(context, file) as MediaDataSource)
+        setDataSource(dataSource as MediaDataSource)
     } else {
-        setDataSource(context, StreamingBox.openLocalHttpUri(context, file))
+        nativeSetDataSource(
+            this,
+            MediaDataSourceService(dataSource),
+            MediaDataSourceService.PATH,
+            null,
+            null
+        )
     }
 }

@@ -10,7 +10,7 @@ internal class EncryptedMediaDataSource(
     private val channel: SeekableByteChannel,
 ) : IMediaDataSource {
 
-    private val lock = ByteBuffer.allocate(1)
+    private val buf1 = ByteBuffer.allocate(1)
     private var temp: WeakReference<ByteBuffer>? = null
 
     override fun readAt(position: Long, buffer: ByteArray, offset: Int, size: Int): Int {
@@ -35,7 +35,7 @@ internal class EncryptedMediaDataSource(
 
     @SuppressLint("NewApi")
     override fun readAt(position: Long, buffer: ByteBuffer): Int {
-        synchronized(lock) {
+        synchronized(buf1) {
             channel.position(position)
             return channel.read(buffer)
         }
@@ -47,11 +47,11 @@ internal class EncryptedMediaDataSource(
 
     @SuppressLint("NewApi")
     override fun getSize(): Long {
-        synchronized(lock) {
+        synchronized(buf1) {
             val pos = channel.position()
             try {
                 channel.position(0)
-                return if (channel.read(lock) == -1) 0 else channel.size()
+                return if (channel.read(buf1) == -1) 0 else channel.size()
             } finally {
                 channel.position(pos)
             }

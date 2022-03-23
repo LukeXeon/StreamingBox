@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.max
 import kotlin.math.min
 
-internal class HttpStreamExtractor(
+internal class HttpStreamServer(
     private val context: Context,
     private val provider: IMediaDataSource.Provider,
 ) : Runnable, ThreadFactory, RejectedExecutionHandler {

@@ -13,7 +13,7 @@ import com.liulishuo.filedownloader.BaseDownloadTask
 import com.liulishuo.filedownloader.FileDownloadListener
 import com.liulishuo.filedownloader.FileDownloader
 import open.source.streamingbox.StreamingBox
-import open.source.streamingbox.setEncryptedDataSource
+import open.source.streamingbox.setDataSource
 import tv.danmaku.ijk.media.player.AndroidMediaPlayer
 import tv.danmaku.ijk.media.player.IMediaPlayer
 import tv.danmaku.ijk.media.player.IjkMediaPlayer
@@ -129,10 +129,11 @@ class MainActivity : AppCompatActivity() {
         var m = AndroidMediaPlayer()
         val ijk = IjkMediaPlayer()
         de.setOnClickListener {
+            val ds = StreamingBox.openMediaDataSource(this, file)
             m.release()
             m = AndroidMediaPlayer()
             m.isLooping = true
-            m.internalMediaPlayer.setEncryptedDataSource(this, file)
+            m.internalMediaPlayer.setDataSource(ds)
             m.prepareAsync()
             m.setOnPreparedListener {
                 it.start()

@@ -41,8 +41,8 @@ internal class HttpStreamProvider : ContentProvider(), IMediaDataSource.Provider
         }
     }
 
-    private val extractor by lazy {
-        HttpStreamExtractor(requireNotNull(context), this).apply { start() }
+    private val server by lazy {
+        HttpStreamServer(requireNotNull(context), this).apply { start() }
     }
 
     override fun open(url: String): IMediaDataSource {
@@ -67,7 +67,7 @@ internal class HttpStreamProvider : ContentProvider(), IMediaDataSource.Provider
         ) {
             val index = projection.indexOf(KEY_FILE)
             val row = arrayOfNulls<Any>(projection.size)
-            row[index] = Uri.parse("http://localhost:${extractor.listenPort}")
+            row[index] = Uri.parse("http://localhost:${server.listenPort}")
                 .buildUpon()
                 .appendQueryParameter(KEY_FILE, selectionArgs[index])
                 .toString()
